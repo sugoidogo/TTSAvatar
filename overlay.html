@@ -68,12 +68,7 @@
     }
     let bid, rid, tid;
 
-    tts.onstart = function () {
-        setPaused(true);
-    }
-
     tts.onend = function () {
-        setPaused(false);
         img.src = silent.src;
     }
 
