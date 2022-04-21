@@ -69,10 +69,11 @@
     let bid, rid, tid;
 
     tts.onstart = function () {
-        img.src = talking.src;
+        setPaused(true);
     }
 
     tts.onend = function () {
+        setPaused(false);
         img.src = silent.src;
     }
 
