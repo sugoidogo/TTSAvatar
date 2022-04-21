@@ -6,7 +6,7 @@
 <script>
     const oauth_url='https://id.twitch.tv/oauth2/authorize';
     const client_id='1gsnqnvtrguxysilfqp5gkb1snswmf';
-    const redirect_uri=window.location.href.split('?')[0];
+    const redirect_uri=window.location.href.split('#')[0].split('#')[0];
     const params = new Proxy(new URLSearchParams(document.location.hash.replace('#', '?')), {
         get: (searchParams, prop) => searchParams.get(prop),
     });
