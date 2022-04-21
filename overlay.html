@@ -76,6 +76,16 @@
         img.src = silent.src;
     }
 
+    function delay(time) {
+        return new Promise(resolve => setTimeout(resolve, time));
+    }
+
+    tts.onboundary = async function () {
+        img.src = silent.src;
+        await delay(100);
+        img.src = talking.src;
+    }
+
     async function getBID() {
         const response = await fetch('https://api.twitch.tv/helix/users'
             , {
