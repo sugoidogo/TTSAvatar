@@ -6,3 +6,5 @@ Have an avatar speak out tts messages
 3. On your Browser Source, `Right-Click > Interact` to access the settings menu.
 4. ...
 5. Profit?
+## Discord
+https://discord.gg/zxDnYSvMNw
