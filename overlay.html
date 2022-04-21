@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<body>
+    <img id="img" src="/loader.gif">
+    <div>
+        <img id="silent">
+        <br>
+        <label for="silent">Silent Image or GIF</label>
+        <input type="file" accept="image/*" oninput="setImg(this.files[0],'silent')">
+        <br>
+        <img id="talking">
+        <br>
+        <label for="talking">Talking Image or GIF</label>
+        <input type="file" accept="image/*" oninput="setImg(this.files[0],'talking')">
+        <br>
+    </div>
+</body>
+<style>
+    #img {
+        width: 100vw;
+        height: 100vh;
+        object-fit: contain;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+
+    img {
+        height: 33vh;
+    }
+
+    div {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width:100vw;
+        opacity: 0;
+    }
+
+    div:hover {
+        opacity: 100;
+        background-color: white;
+    }
+
+    * {
+        font-size: 3vh;
+    }
+</style>
+<script src="https://cdn.rawgit.com/mozilla/localForage/master/dist/localforage.js"></script>
+<script>
+    const params = new Proxy(new URLSearchParams(document.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+    });
+    const client_id = params.client_id;
+    const access_token = params.access_token;
+    const storage = localforage;
+    const error = '/error.png';
+    const img = document.getElementById('img');
+    const silent = document.getElementById('silent');
+    const talking = document.getElementById('talking');
+    const tts = new SpeechSynthesisUtterance();
+    const synth = window.speechSynthesis;
+    const headers = {
+        'Authorization': 'Bearer ' + access_token,
+        'Client-Id': client_id,
+        'Content-Type':'application/json'
+    }
+    let bid, rid, tid;
+
+    tts.onstart = function () {
+        img.src = talking.src;
+    }
+
+    tts.onend = function () {
+        img.src = silent.src;
+    }
+
+    async function getBID() {
+        const response = await fetch('https://api.twitch.tv/helix/users'
+            , {
+                headers: headers
+            }
+        )
+        const json = await response.json()
+        bid=json['data'][0]['id'];
+    }
+
+    async function getReward() {
+        let url = new URL('https://api.twitch.tv/helix/channel_points/custom_rewards');
+        url.search = new URLSearchParams({
+            broadcaster_id: bid,
+            only_manageable_rewards: true
+        });
+        let response = await fetch(url, {
+            headers: headers
+        });
+        let json = await response.json();
+        try {
+            rid = json['data'][0]['id'];
+        } catch (e) {
+            url = new URL('https://api.twitch.tv/helix/channel_points/custom_rewards');
+            url.search = new URLSearchParams({
+                broadcaster_id: bid
+            });
+            response = await fetch(url, {
+                headers: headers,
+                method: 'POST',
+                body: JSON.stringify({
+                    title: 'TTS',
+                    cost: 1,
+                    is_enabled: false,
+                    is_user_input_required: true,
+                    is_global_cooldown_enabled: true,
+                    global_cooldown_seconds: 60
+                })
+            });
+            json = await response.json();
+            try {
+                rid = json['data'][0]['id'];
+                throw 'TTS Redeem has been added to your channel, please enable and edit it to your preferences'
+            } catch (ee) {
+                img.src = error;
+                window.alert('TTSAvatar init failed. Most likely you need to delete an existing tts redeem from your channel.');
+                throw ee;
+            }
+        }
+        return rid;
+    }
+
+    async function setPaused(paused = true) {
+        const url = new URL('https://api.twitch.tv/helix/channel_points/custom_rewards');
+        url.search = new URLSearchParams({
+            broadcaster_id: bid,
+            id: rid
+        });
+        fetch(url, {
+            method: 'PATCH',
+            headers: headers,
+            body: JSON.stringify({
+                is_paused: paused
+            })
+        })
+    }
+
+    async function main() {
+        const url = new URL('https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions');
+        url.search = new URLSearchParams({
+            broadcaster_id: bid,
+            reward_id: rid,
+            status: 'UNFULFILLED',
+            after: await storage.getItem('cursor') || '',
+            first: 1
+        })
+        const response = await fetch(url, {
+            headers: headers
+        });
+        const json = await response.json();
+        try {
+            tts.text = json['data'][0]['user_input'];
+            synth.speak(tts);
+            storage.setItem('cursor',json['pagination']['cursor'] || '')
+        } catch (e) { 
+        }
+    }
+
+    async function init() {
+        try {
+            talking.src = await storage.getItem('talking') || '';
+            silent.src = await storage.getItem('silent') || '';
+            await getBID();
+            await getReward();
+            
+            tid=setInterval(main, 1000);
+            addEventListener('beforeunload', setPaused);
+            setPaused(false);
+            tts.onend();
+        } catch (e) {
+            window.alert(e);
+            img.src = error;
+        }
+    }
+
+    function setImg(file, name) {
+        let element = document.getElementById(name);
+        reader = new FileReader();
+        reader.onload = function (event) {
+            element.src = event.target.result;
+            storage.setItem(name,event.target.result);
+        }
+        reader.onerror = function (event) {
+            window.alert(event);
+        }
+        reader.readAsDataURL(file);
+    }
+
+    init();
+</script>
