@@ -9,9 +9,11 @@
             <option value="local">Local</option>
             <option value="streamelements">StreamElements</option>
         </select>
+        <button onclick="cycle('mode')">Next</button>
         <div id="local">
             <label for="voice">Voice</label>
             <select id="voice" oninput="update('voice',this.value)"></select>
+            <button onclick="cycle('voice')">Next</button>
             <br>
             <label for="volumeRange">Volume</label>
             <input id="volumeRange" type="range" min="0" max="1" step="0.01" oninput="update('volumeNumber',this.value)">
@@ -121,6 +123,18 @@
         'Content-Type': 'application/json'
     }
     let bid, rid, tid, voices, local;
+
+    function cycle(element){
+        element=document.getElementById(element);
+        const max=element.options.length-1;
+        let index=element.selectedIndex;
+        index+=1;
+        if(index>max){
+            index=0;
+        }
+        element.selectedIndex=index;
+        element.oninput();
+    }
 
     function setMode(mode){
         switch (mode){
