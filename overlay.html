@@ -3,16 +3,28 @@
 <body>
     <img id="img" src="/loader.gif">
     <div>
-        <img id="silent">
+        <label for="voice">Voice</label>
+        <select id="voice" oninput="update('voice',this.value)"></select>
+        <br>
+        <label for="volumeRange">Volume</label>
+        <input id="volumeRange" type="range" min="0" max="1" step="0.01" oninput="update('volumeNumber',this.value)">
+        <input id="volumeNumber" type="number" min="0" max="1" step="0.01" oninput="update('volumeRange',this.value)">
+        <br>
+        <label for="rateRange">Rate</label>
+        <input id="rateRange" type="range" min="0.1" max="10" step="0.1" oninput="update('rateNumber',this.value)">
+        <input id="rateNumber" type="number" min="0.1" max="10" step="0.1" oninput="update('rateRange',this.value)">
+        <br>
+        <label for="pitchRange">Pitch</label>
+        <input id="pitchRange" type="range" min="0" max="2" step="0.1" oninput="update('pitchNumber',this.value)">
+        <input id="pitchNumber" type="number" min="0" max="2" step="0.1" oninput="update('pitchRange',this.value)">
         <br>
         <label for="silent">Silent Image or GIF</label>
         <input type="file" accept="image/*" oninput="setImg(this.files[0],'silent')">
-        <br>
-        <img id="talking">
+        <img id="silent">
         <br>
         <label for="talking">Talking Image or GIF</label>
         <input type="file" accept="image/*" oninput="setImg(this.files[0],'talking')">
-        <br>
+        <img id="talking">
     </div>
 </body>
 <style>
@@ -29,12 +41,29 @@
         height: 33vh;
     }
 
+    label {
+        display: inline-block;
+        width: 30vh;
+    }
+
+    select,
+    input[type=range],
+    input[type=file] {
+        display: inline-block;
+        width: 40vh;
+    }
+
+    input[type=number] {
+        display: inline-block;
+        width: 10vh;
+    }
+
     div {
         position: fixed;
         top: 0;
         left: 0;
         height: 100vh;
-        width:100vw;
+        width: 100vw;
         opacity: 0;
     }
 
@@ -64,12 +93,24 @@
     const headers = {
         'Authorization': 'Bearer ' + access_token,
         'Client-Id': client_id,
-        'Content-Type':'application/json'
+        'Content-Type': 'application/json'
     }
-    let bid, rid, tid;
+    let bid, rid, tid, voices;
 
     tts.onend = function () {
         img.src = silent.src;
+    }
+
+    function update(name, val) {
+        const element = document.getElementById(name);
+        name = name.replace('Range', '').replace('Number', '');
+        storage.setItem(name, val);
+        if (name != 'voice') {
+            element.value=val;
+            tts[name]= val;
+            return;
+        }
+        tts.voice=voices[val]
     }
 
     function delay(time) {
@@ -89,7 +130,7 @@
             }
         )
         const json = await response.json()
-        bid=json['data'][0]['id'];
+        bid = json['data'][0]['id'];
     }
 
     async function getReward() {
@@ -165,25 +206,39 @@
         try {
             tts.text = json['data'][0]['user_input'];
             synth.speak(tts);
-            storage.setItem('cursor',json['pagination']['cursor'] || '')
-        } catch (e) { 
-        }
+            storage.setItem('cursor', json['pagination']['cursor'] || '')
+        } catch (e) {}
     }
 
     async function init() {
         try {
-            talking.src = await storage.getItem('talking') || '';
-            silent.src = await storage.getItem('silent') || '';
             await getBID();
             await getReward();
-            
-            tid=setInterval(main, 1000);
-            addEventListener('beforeunload', setPaused);
-            setPaused(false);
+            tid = setInterval(main, 1000);
+            voices=synth.getVoices();
+            talking.src = await storage.getItem('talking') || '';
+            silent.src = await storage.getItem('silent') || '';
             tts.onend();
+            for(name of ['volume','rate','pitch']){
+                let val=storage.getItem(name) || 1;
+                if(!isFinite(val)){
+                    val=1;
+                }
+                tts[name]=val;
+                document.getElementById(name+'Range').value=val;
+                document.getElementById(name+'Number').value=val;
+            }
+            const vselect=document.getElementById('voice');
+            for(index in voices){
+                const option=document.createElement('option');
+                option.value=index;
+                option.text=voices[index].name;
+                vselect.add(option);
+            }
         } catch (e) {
             window.alert(e);
             img.src = error;
+            throw e;
         }
     }
 
@@ -192,9 +247,9 @@
         reader = new FileReader();
         reader.onload = function (event) {
             element.src = event.target.result;
-            storage.setItem(name,event.target.result);
-            if(name=='silent'){
-                img.src=event.target.result;
+            storage.setItem(name, event.target.result);
+            if (name == 'silent') {
+                img.src = event.target.result;
             }
         }
         reader.onerror = function (event) {
@@ -203,5 +258,5 @@
         reader.readAsDataURL(file);
     }
 
-    init();
+    window.onload=init;
 </script>
