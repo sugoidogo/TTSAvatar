@@ -124,7 +124,7 @@
             json = await response.json();
             try {
                 rid = json['data'][0]['id'];
-                throw 'TTS Redeem has been added to your channel, please enable and edit it to your preferences'
+                window.alert('TTS Redeem has been added to your channel, please enable and edit it to your preferences');
             } catch (ee) {
                 img.src = error;
                 window.alert('TTSAvatar init failed. Most likely you need to delete an existing tts redeem from your channel.');
