@@ -193,6 +193,9 @@
         reader.onload = function (event) {
             element.src = event.target.result;
             storage.setItem(name,event.target.result);
+            if(name=='silent'){
+                img.src=event.target.result;
+            }
         }
         reader.onerror = function (event) {
             window.alert(event);
