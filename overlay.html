@@ -2,7 +2,7 @@
 
 <body>
     <img id="img" src="/loader.gif">
-    <audio id="audio"></audio>
+    <audio autoplay="true" id="audio"></audio>
     <div id="controls">
         <label for="mode">Voice Mode</label>
         <select id="mode" oninput="setMode(this.value)">
@@ -271,9 +271,6 @@
                 text:message
             });
             audio.src=url;
-            audio.pause();
-            audio.load();
-            audio.play();
         }
     }
 
