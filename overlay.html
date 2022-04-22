@@ -2,21 +2,33 @@
 
 <body>
     <img id="img" src="/loader.gif">
-    <div>
-        <label for="voice">Voice</label>
-        <select id="voice" oninput="update('voice',this.value)"></select>
-        <br>
-        <label for="volumeRange">Volume</label>
-        <input id="volumeRange" type="range" min="0" max="1" step="0.01" oninput="update('volumeNumber',this.value)">
-        <input id="volumeNumber" type="number" min="0" max="1" step="0.01" oninput="update('volumeRange',this.value)">
-        <br>
-        <label for="rateRange">Rate</label>
-        <input id="rateRange" type="range" min="0.1" max="10" step="0.1" oninput="update('rateNumber',this.value)">
-        <input id="rateNumber" type="number" min="0.1" max="10" step="0.1" oninput="update('rateRange',this.value)">
-        <br>
-        <label for="pitchRange">Pitch</label>
-        <input id="pitchRange" type="range" min="0" max="2" step="0.1" oninput="update('pitchNumber',this.value)">
-        <input id="pitchNumber" type="number" min="0" max="2" step="0.1" oninput="update('pitchRange',this.value)">
+    <audio id="audio"></audio>
+    <div id="controls">
+        <label for="mode">Voice Mode</label>
+        <select id="mode" oninput="setMode(this.value)">
+            <option value="local">Local</option>
+            <option value="streamelements">StreamElements</option>
+        </select>
+        <div id="local">
+            <label for="voice">Voice</label>
+            <select id="voice" oninput="update('voice',this.value)"></select>
+            <br>
+            <label for="volumeRange">Volume</label>
+            <input id="volumeRange" type="range" min="0" max="1" step="0.01" oninput="update('volumeNumber',this.value)">
+            <input id="volumeNumber" type="number" min="0" max="1" step="0.01" oninput="update('volumeRange',this.value)">
+            <br>
+            <label for="rateRange">Rate</label>
+            <input id="rateRange" type="range" min="0.1" max="10" step="0.1" oninput="update('rateNumber',this.value)">
+            <input id="rateNumber" type="number" min="0.1" max="10" step="0.1" oninput="update('rateRange',this.value)">
+            <br>
+            <label for="pitchRange">Pitch</label>
+            <input id="pitchRange" type="range" min="0" max="2" step="0.1" oninput="update('pitchNumber',this.value)">
+            <input id="pitchNumber" type="number" min="0" max="2" step="0.1" oninput="update('pitchRange',this.value)">
+        </div>
+        <div id="streamelements">
+            <label for="pollyvoice">Polly Voice</label>
+            <input id="pollyvoice" type="text" oninput="storage.setItem('pollyvoice',this.value)">
+        </div>
         <br>
         <label for="silent">Silent Image or GIF</label>
         <input type="file" accept="image/*" oninput="setImg(this.files[0],'silent')">
@@ -47,6 +59,11 @@
     }
 
     select,
+    input[type=text] {
+        display: inline-block;
+        width:60vh;
+    }
+
     input[type=range],
     input[type=file] {
         display: inline-block;
@@ -58,7 +75,7 @@
         width: 10vh;
     }
 
-    div {
+    #controls {
         position: fixed;
         top: 0;
         left: 0;
@@ -67,9 +84,13 @@
         opacity: 0;
     }
 
-    div:hover {
+    #controls:hover {
         opacity: 100;
         background-color: white;
+    }
+
+    audio {
+        opacity: 0;
     }
 
     * {
@@ -88,6 +109,10 @@
     const img = document.getElementById('img');
     const silent = document.getElementById('silent');
     const talking = document.getElementById('talking');
+    const audio = document.getElementById('audio');
+    const localdiv=document.getElementById('local');
+    const streamelementsdiv=document.getElementById('streamelements');
+    const pollyvoice=document.getElementById('pollyvoice');
     const tts = new SpeechSynthesisUtterance();
     const synth = window.speechSynthesis;
     const headers = {
@@ -95,7 +120,33 @@
         'Client-Id': client_id,
         'Content-Type': 'application/json'
     }
-    let bid, rid, tid, voices;
+    let bid, rid, tid, voices, local;
+
+    function setMode(mode){
+        switch (mode){
+            case 'local':
+                local=true;
+                localdiv.hidden=false;
+                streamelementsdiv.hidden=true;
+                break;
+            case 'streamelements':
+                local=false;
+                localdiv.hidden=true;
+                streamelementsdiv.hidden=false;
+                break;
+        }
+        storage.setItem('mode',mode);
+    }
+
+    audio.onplay=function(){
+        img.src=talking.src;
+        setPaused(true);
+    }
+
+    audio.onended=function(){
+        img.src=silent.src;
+        setPaused(false);
+    }
 
     tts.onend = function () {
         img.src = silent.src;
@@ -204,10 +255,26 @@
         });
         const json = await response.json();
         try {
-            tts.text = json['data'][0]['user_input'];
-            synth.speak(tts);
+            speak(json['data'][0]['user_input']);
             storage.setItem('cursor', json['pagination']['cursor'] || '')
         } catch (e) {}
+    }
+
+    function speak(message){
+        if(local){
+            tts.text = message;
+            synth.speak(tts);
+        }else{
+            const url=new URL('https://api.streamelements.com/kappa/v2/speech');
+            url.search=new URLSearchParams({
+                voice:pollyvoice.value,
+                text:message
+            });
+            audio.src=url;
+            audio.pause();
+            audio.load();
+            audio.play();
+        }
     }
 
     async function init() {
@@ -228,6 +295,7 @@
                 document.getElementById(name+'Range').value=val;
                 document.getElementById(name+'Number').value=val;
             }
+            pollyvoice.value=await storage.getItem('pollyvoice') || 'Brian';
             const vselect=document.getElementById('voice');
             for(index in voices){
                 const option=document.createElement('option');
@@ -235,6 +303,7 @@
                 option.text=voices[index].name;
                 vselect.add(option);
             }
+            setMode(await storage.getItem('mode') || 'local');
         } catch (e) {
             window.alert(e);
             img.src = error;
