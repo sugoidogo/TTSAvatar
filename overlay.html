@@ -16,8 +16,10 @@
             <button onclick="cycle('voice')">Next</button>
             <br>
             <label for="volumeRange">Volume</label>
-            <input id="volumeRange" type="range" min="0" max="1" step="0.01" oninput="update('volumeNumber',this.value)">
-            <input id="volumeNumber" type="number" min="0" max="1" step="0.01" oninput="update('volumeRange',this.value)">
+            <input id="volumeRange" type="range" min="0" max="1" step="0.01"
+                oninput="update('volumeNumber',this.value)">
+            <input id="volumeNumber" type="number" min="0" max="1" step="0.01"
+                oninput="update('volumeRange',this.value)">
             <br>
             <label for="rateRange">Rate</label>
             <input id="rateRange" type="range" min="0.1" max="10" step="0.1" oninput="update('rateNumber',this.value)">
@@ -63,7 +65,7 @@
     select,
     input[type=text] {
         display: inline-block;
-        width:60vh;
+        width: 60vh;
     }
 
     input[type=range],
@@ -112,9 +114,9 @@
     const silent = document.getElementById('silent');
     const talking = document.getElementById('talking');
     const audio = document.getElementById('audio');
-    const localdiv=document.getElementById('local');
-    const streamelementsdiv=document.getElementById('streamelements');
-    const pollyvoice=document.getElementById('pollyvoice');
+    const localdiv = document.getElementById('local');
+    const streamelementsdiv = document.getElementById('streamelements');
+    const pollyvoice = document.getElementById('pollyvoice');
     const tts = new SpeechSynthesisUtterance();
     const synth = window.speechSynthesis;
     const headers = {
@@ -122,34 +124,34 @@
         'Client-Id': client_id,
         'Content-Type': 'application/json'
     }
-    let bid, rid, tid, voices, local;
+    let bid, rid, tid, vid, voices, local, volumeCallback;
 
-    function cycle(element){
-        element=document.getElementById(element);
-        const max=element.options.length-1;
-        let index=element.selectedIndex;
-        index+=1;
-        if(index>max){
-            index=0;
+    function cycle(element) {
+        element = document.getElementById(element);
+        const max = element.options.length - 1;
+        let index = element.selectedIndex;
+        index += 1;
+        if (index > max) {
+            index = 0;
         }
-        element.selectedIndex=index;
+        element.selectedIndex = index;
         element.oninput();
     }
 
-    function setMode(mode){
-        switch (mode){
+    function setMode(mode) {
+        switch (mode) {
             case 'local':
-                local=true;
-                localdiv.hidden=false;
-                streamelementsdiv.hidden=true;
+                local = true;
+                localdiv.hidden = false;
+                streamelementsdiv.hidden = true;
                 break;
             case 'streamelements':
-                local=false;
-                localdiv.hidden=true;
-                streamelementsdiv.hidden=false;
+                local = false;
+                localdiv.hidden = true;
+                streamelementsdiv.hidden = false;
                 break;
         }
-        storage.setItem('mode',mode);
+        storage.setItem('mode', mode);
     }
 
     audio.onloadstart = function () {
@@ -183,8 +185,8 @@
         vid = setInterval(volumeCallback, 100);
     }
 
-    audio.onended=function(){
-        img.src=silent.src;
+    audio.onended = function () {
+        img.src = silent.src
         setPaused(false);
         clearInterval(vid);
     }
@@ -198,18 +200,18 @@
         name = name.replace('Range', '').replace('Number', '');
         storage.setItem(name, val);
         if (name != 'voice') {
-            element.value=val;
-            tts[name]= val;
+            element.value = val;
+            tts[name] = val;
             return;
         }
-        tts.voice=voices[val]
+        tts.voice = voices[val]
     }
 
     function delay(time) {
         return new Promise(resolve => setTimeout(resolve, time));
     }
 
-    tts.onboundary = async function () {
+    tts.onboundary = async function (event) {
         img.src = silent.src;
         await delay(100);
         img.src = talking.src;
@@ -298,20 +300,22 @@
         try {
             speak(json['data'][0]['user_input']);
             storage.setItem('cursor', json['pagination']['cursor'] || '')
-        } catch (e) {}
+        } catch (e) { }
     }
 
-    function speak(message){
-        if(local){
+    async function speak(message) {
+        if (local) {
             tts.text = message;
             synth.speak(tts);
-        }else{
-            const url=new URL('https://api.streamelements.com/kappa/v2/speech');
-            url.search=new URLSearchParams({
-                voice:pollyvoice.value,
-                text:message
+        } else {
+            const url = new URL('https://api.streamelements.com/kappa/v2/speech');
+            url.search = new URLSearchParams({
+                voice: pollyvoice.value,
+                text: message
             });
-            audio.src=url;
+            const response = await fetch(url);
+            const data = await response.blob();
+            audio.src = URL.createObjectURL(data);
         }
     }
 
@@ -320,25 +324,25 @@
             await getBID();
             await getReward();
             tid = setInterval(main, 1000);
-            voices=synth.getVoices();
+            voices = synth.getVoices();
             talking.src = await storage.getItem('talking') || '';
             silent.src = await storage.getItem('silent') || '';
             tts.onend();
-            for(name of ['volume','rate','pitch']){
-                let val=storage.getItem(name) || 1;
-                if(!isFinite(val)){
-                    val=1;
+            for (name of ['volume', 'rate', 'pitch']) {
+                let val = storage.getItem(name) || 1;
+                if (!isFinite(val)) {
+                    val = 1;
                 }
-                tts[name]=val;
-                document.getElementById(name+'Range').value=val;
-                document.getElementById(name+'Number').value=val;
+                tts[name] = val;
+                document.getElementById(name + 'Range').value = val;
+                document.getElementById(name + 'Number').value = val;
             }
-            pollyvoice.value=await storage.getItem('pollyvoice') || 'Brian';
-            const vselect=document.getElementById('voice');
-            for(index in voices){
-                const option=document.createElement('option');
-                option.value=index;
-                option.text=voices[index].name;
+            pollyvoice.value = await storage.getItem('pollyvoice') || 'Brian';
+            const vselect = document.getElementById('voice');
+            for (index in voices) {
+                const option = document.createElement('option');
+                option.value = index;
+                option.text = voices[index].name;
                 vselect.add(option);
             }
             setMode(await storage.getItem('mode') || 'local');
@@ -365,5 +369,5 @@
         reader.readAsDataURL(file);
     }
 
-    window.onload=init;
+    window.onload = init;
 </script>
