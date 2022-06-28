@@ -7,10 +7,9 @@ Have an avatar speak out tts messages
 4. ...
 5. Profit?
 ## Voices
-In local mode, availible voices will generally come from your operating system.
-In StreamElements mode, a public endpoint of theirs is used to generate Amazon Polly voice audio.
+A public endpoint of StreamElements is used to generate Amazon Polly voice audio.
 At the time of writing, the list of supported voices is [here](https://docs.aws.amazon.com/polly/latest/dg/voicelist.html).
-**Only Standard voices are working at this time.**
-Support for use of your own Amazon Polly instance is coming soon, which will allow you to use the neural voices.
-## Discord
-https://discord.gg/zxDnYSvMNw
+Neural voices and SMML are not supported yet.
+## Support
+[Get support on Discord](https://discord.gg/zxDnYSvMNw)
+[Give support on Patreon](https://www.patreon.com/SugoiDogo)
