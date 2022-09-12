@@ -6,7 +6,10 @@
 <script>
     const oauth_url='https://id.twitch.tv/oauth2/authorize';
     const client_id='1gsnqnvtrguxysilfqp5gkb1snswmf';
-    const redirect_uri=window.location.href.split('#')[0].split('#')[0];
+    const redirect_uri=window.location.origin+window.location.pathname
+    if(window.location.search!=''){
+        localStorage.setItem('search',window.location.search)
+    }
     const params = new Proxy(new URLSearchParams(document.location.hash.replace('#', '?')), {
         get: (searchParams, prop) => searchParams.get(prop),
     });
@@ -21,14 +24,21 @@
         // Twitch API Bug: redirect_uri is not decoded before matching, but URLSearchParams always encodes.
         url=url.toString()+'&redirect_uri='+redirect_uri;
         window.location.replace(url);
+    }else if(localStorage.getItem('search')){
+        copyURL(true)
     }
 
-    function copyURL(){
+    function copyURL(redirect=false){
         const url=new URL(redirect_uri+'overlay.html');
         url.search=new URLSearchParams({
             client_id:client_id
             ,access_token:access_token
         })
-        navigator.clipboard.writeText(url.toString())
+        if(redirect){
+            localStorage.removeItem('search')
+            window.location.href=url.href
+        }else{
+            navigator.clipboard.writeText(url.toString())
+        }
     }
 </script>

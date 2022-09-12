@@ -284,9 +284,8 @@
             pollyvoice.value = await storage.getItem('pollyvoice') || 'Brian';
             const vselect = document.getElementById('voice');
         } catch (e) {
-            window.alert(e);
-            img.src = error;
-            throw e;
+            const url=window.location.origin+'/TTSAvatar?redirect=true'
+            window.location.href=url
         }
     }
 
