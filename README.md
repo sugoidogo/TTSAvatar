@@ -12,4 +12,4 @@ At the time of writing, the list of supported voices is [here](https://docs.aws.
 Neural voices and SMML are not supported yet.
 ## Support
 - Get support via [Discord](https://discord.gg/PbGT9tVWTC)
-- Give support via [PayPal](https://paypal.me/SugoiDogo)
+- Give support via [Ko-Fi](https://ko-fi.com/sugoidogo)
