@@ -11,5 +11,4 @@ A public endpoint of StreamElements is used to generate Amazon Polly voice audio
 At the time of writing, the list of supported voices is [here](https://docs.aws.amazon.com/polly/latest/dg/voicelist.html).
 Neural voices and SMML are not supported yet.
 ## Support
-- Get support via [Discord](https://discord.gg/PbGT9tVWTC)
-- Give support via [Ko-Fi](https://ko-fi.com/sugoidogo)
+Support information for all my software is on my [GitHub profile](github.com/sugoidogo)
