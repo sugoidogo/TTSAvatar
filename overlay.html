@@ -284,8 +284,13 @@
             pollyvoice.value = await storage.getItem('pollyvoice') || 'Brian';
             const vselect = document.getElementById('voice');
         } catch (e) {
-            const url=window.location.origin+'/TTSAvatar?redirect=true'
-            window.location.href=url
+            if(window.confirm(
+                'Your TTSAvatar Twitch token has expired. Would you like TTSAvatar to try to get a new one?'+
+                "If you see the Twitch login page where TTSAvatar should be, you'll need to get a new url from the settings page."
+            )){
+                const url=window.location.origin+'/TTSAvatar?redirect=true'
+                window.location.href=url
+            }
         }
     }
 
