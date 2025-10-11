@@ -6,7 +6,7 @@
     <div id="controls">
         <div id="streamelements">
             <label for="pollyvoice">Polly Voice</label>
-            <input id="pollyvoice" type="text" oninput="storage.setItem('pollyvoice',this.value)">
+            <input id="pollyvoice" type="text" value="Brian" oninput="storage.setItem('pollyvoice',this.value)">
         </div>
         <br>
         <label for="silent">Silent Image or GIF</label>
@@ -77,12 +77,13 @@
     }
 </style>
 <script src="https://cdn.rawgit.com/mozilla/localForage/master/dist/localforage.js"></script>
-<script>
+<script type="module">
+    import get_tokens from 'https://tba.sugoidogo.com/tba.mjs'
     const params = new Proxy(new URLSearchParams(document.location.search), {
         get: (searchParams, prop) => searchParams.get(prop),
-    });
-    const client_id = params.client_id;
-    const access_token = params.access_token;
+    })
+    const client_id = params.client_id
+    const tokens = await get_tokens(client_id)
     const storage = localforage;
     const error = '/error.png';
     const img = document.getElementById('img');
@@ -95,7 +96,7 @@
     const tts = new SpeechSynthesisUtterance();
     const synth = window.speechSynthesis;
     const headers = {
-        'Authorization': 'Bearer ' + access_token,
+        'Authorization': 'Bearer ' + tokens.access_token,
         'Client-Id': client_id,
         'Content-Type': 'application/json'
     }
@@ -296,7 +297,7 @@
 
     function setImg(file, name) {
         let element = document.getElementById(name);
-        reader = new FileReader();
+        let reader = new FileReader();
         reader.onload = function (event) {
             element.src = event.target.result;
             storage.setItem(name, event.target.result);
@@ -309,6 +310,7 @@
         }
         reader.readAsDataURL(file);
     }
-
-    window.onload = init;
+    globalThis.storage=storage;
+    globalThis.setImg=setImg;
+    init()
 </script>

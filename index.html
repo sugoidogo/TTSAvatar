@@ -3,36 +3,18 @@
 <body>
     <button onclick="copyURL()">copy overlay url</button>
 </body>
-<script>
-    const oauth_url='https://id.twitch.tv/oauth2/authorize';
-    const client_id='1gsnqnvtrguxysilfqp5gkb1snswmf';
-    const redirect_uri=window.location.origin+window.location.pathname
-    if(window.location.search!=''){
-        localStorage.setItem('search',window.location.search)
-    }
-    const params = new Proxy(new URLSearchParams(document.location.hash.replace('#', '?')), {
-        get: (searchParams, prop) => searchParams.get(prop),
-    });
-    const access_token=params.access_token;
-    if(!access_token){
-        let url=new URL(oauth_url);
-        url.search=new URLSearchParams({
-            client_id:client_id
-            ,response_type:'token'
-            ,scope:'channel:manage:redemptions channel:read:redemptions'
-        })
-        // Twitch API Bug: redirect_uri is not decoded before matching, but URLSearchParams always encodes.
-        url=url.toString()+'&redirect_uri='+redirect_uri;
-        window.location.replace(url);
-    }else if(localStorage.getItem('search')){
-        copyURL(true)
-    }
+<script type="module">
+    import get_tokens from "https://tba.sugoidogo.com/tba.mjs"
+    const client_id = "1gsnqnvtrguxysilfqp5gkb1snswmf"
+    const scope = "channel:manage:redemptions channel:read:redemptions"
+    const tokens = await get_tokens(client_id, scope)
+    console.debug(tokens)
 
     function copyURL(redirect=false){
-        const url=new URL(redirect_uri+'overlay.html');
+        const url = new URL('overlay.html', location.origin + location.pathname);
         url.search=new URLSearchParams({
             client_id:client_id
-            ,access_token:access_token
+            , refresh_token: tokens.refresh_token
         })
         if(redirect){
             localStorage.removeItem('search')
@@ -41,4 +23,6 @@
             navigator.clipboard.writeText(url.toString())
         }
     }
+
+    globalThis.copyURL = copyURL
 </script>
